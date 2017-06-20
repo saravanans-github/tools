@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# pass an reminder to the apple script
+osascript reminder.scpt "$1"
