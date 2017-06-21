@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# pass an reminder to the apple script
+url=~/Tools/bin/reminder.scpt
+osascript $url "$1"
