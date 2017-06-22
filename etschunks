@@ -17,13 +17,17 @@ else
     openssl rand 16 > $keyFile
 fi
 
-# Get the key value in hex
-encKey=$(hexdump -v -e '16/1 "%02x"' $keyFile)
+if [ -e $ivFile ] 
+then
+    echo "Using $ivFile as key file"
+else
+    openssl rand 16 > $ivFile
+fi
 
-# Get the iv value in hex and store it in a file
-iv=$(openssl rand 16 -hex)
-echo "$iv" > $ivFile
-echo "IV=$iv"
+# Get the key & iv values in hex
+encKey=$(hexdump -v -e '16/1 "%02x"' $keyFile)
+iv=$(tail $ivFile)
+
 
 # 1. push the TS folder temporarily
 pushd $pathToTs
@@ -36,8 +40,8 @@ if [ "$options" == "$OPTION_COPY" ]
 then
     # copy the manifest to the Encrypted
     cp ${filename}.m3u8 eTS/${filename}.m3u8
-
     cp enc.key eTS/enc.key
+    cp enc.iv eTS/enc.iv
 fi
 
 # get the number of chunks
@@ -49,9 +53,8 @@ i=0
 
 for i in $(seq -f "%01g" 0 $tsCount); do
     tsFile=$filename$i.ts
-    echo [$i] $tsFile
-
     openssl aes-128-cbc -e -in $tsFile -out $FOLDER_NAME/$tsFile -nosalt -iv $iv -K $encKey
+    echo "encrypting [$i] $tsFile ... done"
 done
 
 # return to the previous working directory i.e the directory the command was called from
