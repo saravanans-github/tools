@@ -1,0 +1,39 @@
+#!/bin/bash
+
+mp4File=$1
+keyInfoFile=$2
+
+# check if the first param is an passed in
+if [ -z "$mp4File" ] 
+then
+    # display error and exit
+    echo "aborting... input mp4 file not specified"
+    exit
+fi
+
+# check if the second first param is an passed in
+if [ -z "$keyInfoFile"]
+then
+    echo "key info file for encryption missing!!!"
+    echo "generating local key info file..."
+    # remove any existing key & keyinfo files
+    rm enc.key
+    rm enc.keyinfo
+
+    # generate the key and store it
+    openssl rand 16 > enc.key
+
+    #generate the iv
+    iv=`openssl rand -hex 16`
+
+    #add the key url, key folder and iv values respectively to the keyinfo file
+    echo "enc.key" >> enc.keyinfo
+    echo "enc.key" >> enc.keyinfo
+    echo $iv >> enc.keyinfo
+    echo "done! local key info file is `pwd`/enc.keyinfo"
+
+    keyInfoFile="enc.keyinfo"
+fi
+
+# now generate the encrypted hls (encryption method is AES-128 in CBC)
+ffmpeg -i $mp4File -start_number 0 -hls_time 10 -hls_list_size 0 -hls_key_info_file $keyInfoFile -f hls index.m3u8
