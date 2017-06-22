@@ -6,7 +6,9 @@ keyInfoFile=$2
 # check if the first param is an passed in
 if [ -z "$mp4File" ] 
 then
+    # display error and exit
     echo "aborting... input mp4 file not specified"
+    exit
 fi
 
 # check if the second first param is an passed in
