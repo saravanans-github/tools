@@ -5,6 +5,7 @@ pathToTs=$1
 filename=$2
 options=$3
 keyFile="$pathToTs/enc.key"
+ivFile="$pathToTs/enc.iv"
 
 OPTION_COPY="-c"
 FOLDER_NAME="eTS"
@@ -18,6 +19,11 @@ fi
 
 # Get the key value in hex
 encKey=$(hexdump -v -e '16/1 "%02x"' $keyFile)
+
+# Get the iv value in hex and store it in a file
+iv=$(openssl rand 16 -hex)
+echo "$iv" > $ivFile
+echo "IV=$iv"
 
 # 1. push the TS folder temporarily
 pushd $pathToTs
@@ -42,7 +48,6 @@ tsCount=$(ls *.ts | wc -l)
 i=0
 
 for i in $(seq -f "%01g" 0 $tsCount); do
-    iv=$(printf '%032x' $i)
     tsFile=$filename$i.ts
     echo [$i] $tsFile
 
