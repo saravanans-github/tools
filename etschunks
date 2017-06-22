@@ -1,0 +1,58 @@
+#!/bin/bash
+
+pathToTs=$1
+# this assumes that the .m3u8 and .ts share the same filename
+filename=$2
+options=$3
+keyFile="$pathToTs/enc.key"
+ivFile="$pathToTs/enc.iv"
+
+OPTION_COPY="-c"
+FOLDER_NAME="eTS"
+
+if [ -e $keyFile ] 
+then
+    echo "Using $keyFile as key file"
+else
+    openssl rand 16 > $keyFile
+fi
+
+# Get the key value in hex
+encKey=$(hexdump -v -e '16/1 "%02x"' $keyFile)
+
+# Get the iv value in hex and store it in a file
+iv=$(openssl rand 16 -hex)
+echo "$iv" > $ivFile
+echo "IV=$iv"
+
+# 1. push the TS folder temporarily
+pushd $pathToTs
+
+# 2. create a folder to put the encrypted chunks
+mkdir $FOLDER_NAME
+
+# 3. if a -c is passed in as part of the options copy the manifest and the key file to the eTS folder
+if [ "$options" == "$OPTION_COPY" ]
+then
+    # copy the manifest to the Encrypted
+    cp ${filename}.m3u8 eTS/${filename}.m3u8
+
+    cp enc.key eTS/enc.key
+fi
+
+# get the number of chunks
+tsCount=$(ls *.ts | wc -l)
+# we need to decrement by one cos the chunks start w/ 0 and to make it usable for the for loop
+((tsCount--))
+
+i=0
+
+for i in $(seq -f "%01g" 0 $tsCount); do
+    tsFile=$filename$i.ts
+    echo [$i] $tsFile
+
+    openssl aes-128-cbc -e -in $tsFile -out $FOLDER_NAME/$tsFile -nosalt -iv $iv -K $encKey
+done
+
+# return to the previous working directory i.e the directory the command was called from
+popd
