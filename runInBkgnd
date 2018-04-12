@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# run the command in background
+## stdout to log.txt
+## stderr to err.txt
+nohup $* > log.txt 2>err.txt &
